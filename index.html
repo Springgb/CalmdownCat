@@ -1,0 +1,497 @@
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>淡定家长 - 情绪裁判 V7.5 (安卓适配版)</title>  
+    <style>  
+        :root {  
+            --bg-color: #FFF0F5;  
+            --card-bg: #ffffff;  
+            --primary-color: #FF8A80;  
+            --danger-color: #d32f2f;  
+        }  
+  
+        body {  
+            margin: 0; padding: 0; font-family: 'Comic Sans MS', 'YouYuan', 'Microsoft YaHei', sans-serif;  
+            background-color: var(--bg-color);  
+            background-image: radial-gradient(#FFCDD2 10%, transparent 10%);  
+            background-size: 20px 20px;  
+            display: flex; justify-content: center; align-items: center; height: 100vh;  
+            overflow: hidden; user-select: none;  
+        }  
+  
+        .container {  
+            background: var(--card-bg); padding: 30px; border-radius: 30px;  
+            box-shadow: 0 10px 25px rgba(255, 138, 128, 0.3);  
+            text-align: center; width: 400px; position: relative;  
+            border: 4px solid #FFCCBC;  
+        }  
+  
+        h1 { color: #E91E63; font-size: 26px; margin-bottom: 5px; text-shadow: 1px 1px #fff; }  
+        p.subtitle { color: #8D6E63; font-size: 13px; margin-bottom: 20px; }  
+          
+        /* 吉祥物展示区 */  
+        .mascot-container {  
+            width: 220px;  
+            height: 220px;  
+            margin: 10px auto;  
+            display: flex;  
+            align-items: center; justify-content: center;  
+        }  
+          
+        .mascot-img {  
+            max-width: 100%;  
+            max-height: 100%;  
+            object-fit: contain;  
+            transition: transform 0.2s;  
+        }  
+  
+        /* 音量条 */  
+        .status-bar {  
+            height: 20px; background: #FFEBEE; border-radius: 10px;  
+            margin: 15px auto; width: 90%; overflow: hidden;  
+            border: 2px solid #FFCDD2;  
+        }  
+        .volume-level {  
+            height: 100%; width: 0%;   
+            background: linear-gradient(90deg, #81D4FA, #29B6F6);  
+            border-radius: 8px;   
+            transition: width 0.1s linear, background 0.2s;  
+        }  
+        .volume-level.danger {  
+            background: linear-gradient(90deg, #FF7043, #F44336);  
+            box-shadow: 0 0 10px #F44336;  
+        }  
+  
+        .btn-start {  
+            background-color: var(--primary-color); color: white; border: none;  
+            padding: 12px 35px; border-radius: 50px; font-size: 18px; cursor: pointer;  
+            box-shadow: 0 5px #E57373; transition: 0.2s; margin-top: 10px; font-weight: bold;  
+        }  
+        .btn-start:active { transform: translateY(3px); box-shadow: 0 2px #E57373; }  
+        .btn-start:disabled { background-color: #cfd8dc; cursor: not-allowed; box-shadow: none; transform: none;}  
+  
+        .running-indicator {  
+            display: none; color: #E91E63; margin-top: 10px; font-size: 14px; font-weight: bold;  
+            animation: pulse 2s infinite;  
+        }  
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }  
+  
+        .debug-text {   
+            font-size: 12px; color: #888; margin-top: 10px;   
+            min-height: 20px; padding: 5px; background: #FFF8E1; border-radius: 4px;  
+            text-align: left; max-height: 60px; overflow-y: auto; word-break: break-all;  
+        }  
+  
+        /* 灵敏度滑块 */  
+        .slider-container {  
+            margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;  
+            font-size: 14px; color: #5D4037;  
+        }  
+        input[type=range] { accent-color: #FF8A80; cursor: pointer; }  
+  
+        /* 警告弹窗 */  
+        .overlay {  
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;  
+            display: flex; justify-content: center; align-items: center;  
+            z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s;  
+            background: rgba(0,0,0,0.8);  
+        }  
+        .overlay.active { opacity: 1; pointer-events: all; }  
+          
+        .card {  
+            background: white; padding: 20px; border-radius: 20px; width: 320px;  
+            text-align: center; box-shadow: 0 0 50px rgba(255,255,255,0.2);  
+            transform: scale(0.8); transition: transform 0.3s;  
+            border: 5px solid;  
+        }  
+        .overlay.active .card { transform: scale(1); }  
+  
+        .overlay.mode-red .card { border-color: #d32f2f; }  
+        .overlay.mode-yellow .card { border-color: #FBC02D; }  
+  
+        .card-img { width: 160px; height: 160px; object-fit: contain; margin-bottom: 10px; }  
+        .card-title { font-size: 28px; font-weight: 900; margin: 10px 0; display: block; }  
+        .card-msg { font-size: 18px; color: #455a64; font-weight: bold; line-height: 1.4; margin-bottom: 20px; }  
+  
+        .mode-red .card-title { color: #d32f2f; }  
+        .mode-yellow .card-title { color: #FBC02D; }  
+  
+        .btn-calm {  
+            border: none; color: white; padding: 10px 30px; border-radius: 25px;  
+            font-size: 16px; font-weight: bold; cursor: pointer;  
+            background: #90A4AE; box-shadow: 0 4px #546E7A;  
+        }  
+        .btn-calm:active { transform: translateY(2px); box-shadow: 0 1px #546E7A; }  
+    </style>  
+</head>  
+<body>  
+  
+    <div class="container">  
+        <h1>🐱 猫咪情绪裁判 V7.5</h1>  
+        <p class="subtitle">安卓端专用适配版</p>  
+          
+        <!-- 吉祥物展示区：路径改为安卓兼容格式 -->  
+        <div class="mascot-container">  
+            <img src="assets/cat_normal.png" id="mascotImg" class="mascot-img" alt="Mascot">  
+        </div>  
+          
+        <div class="status-bar">  
+            <div class="volume-level" id="volumeLevel"></div>  
+        </div>  
+  
+        <div class="slider-container">  
+            <span>🎤 灵敏度:</span>  
+            <input type="range" id="sensSlider" min="1" max="100" value="85">  
+            <span id="sensVal">85</span>  
+        </div>  
+  
+        <button class="btn-start" id="startBtn">🏁 开始辅导</button>  
+        <div class="running-indicator" id="runningText">🐱 正在竖着耳朵听...</div>  
+        <div class="debug-text" id="debugInfo">等待启动...</div>  
+    </div>  
+  
+    <!-- 声音源：路径改为安卓兼容格式 -->  
+    <audio id="whistleAudio" src="assets/whistle.mp3" preload="auto"></audio>  
+  
+    <!-- 警告弹窗 -->  
+    <div class="overlay" id="overlay">  
+        <div class="card">  
+            <img src="" id="cardImg" class="card-img" alt="Warning">  
+            <span class="card-title" id="cardTitle"></span>  
+            <div class="card-msg" id="cardMsg"></div>  
+            <button class="btn-calm" onclick="dismissAlert()">我冷静了</button>  
+        </div>  
+    </div>  
+  
+    <script>  
+        // ============================================================  
+        //  1. 安卓适配：图片路径修改（关键！）  
+        //  约定：所有资源文件放在 assets 文件夹下（和HTML同级）  
+        //  安卓要求：路径不加 ./ ，统一用正斜杠 /  
+        // ============================================================  
+        const USER_IMAGES = {  
+            NORMAL: "assets/cat_normal.png",  // 去掉 ./ ，直接写 assets/xxx  
+            YELLOW: "assets/card_yellow.png",  
+            RED: "assets/card_red.png"  
+        };  
+  
+        // ============================================================  
+        //  2. 关键词库（不变）  
+        // ============================================================  
+        const CONTEXT_WORDS = ["作业", "题", "学习", "辅导", "上课", "考试", "分数", "成绩", "写", "算", "读", "背", "错", "试卷", "教你", "你"];  
+        const NEGATIVE_PREFIXES = ["不", "别", "没", "非", "勿"];  
+  
+        const WORDS_FATAL = [  
+            "猪", "驴", "狗", "笨猪", "蠢驴", "废物", "废柴", "蠢货", "饭桶", "窝囊废",  
+            "滚", "去死", "脑子进水", "缺根筋", "没脑子", "丧门星", "扫把星", "瞎眼",  
+            "妈的", "他妈", "卧槽", "傻逼", "混蛋", "神经病", "有病", "闭嘴", "shit", "fuck", "damn"  
+        ];  
+  
+        const WORDS_INSULT = [  
+            "傻", "笨", "蠢", "呆", "愣", "木", "愚", "白痴", "智障",  
+            "没用", "没本事", "没出息", "无能", "不行",  
+            "扫大街", "搬砖", "捡垃圾", "要饭",  
+            "累赘", "拖油瓶", "负担", "故意", "装", "耍心眼", "糊弄", "磨洋工",  
+            "没救", "无望", "白搭", "对牛弹琴", "丢人", "不如", "摆设"  
+        ];  
+  
+        const WORDS_IMPATIENT = [  
+            "快点", "赶紧", "立刻", "马上", "麻溜",  
+            "磨蹭", "磨叽", "耽误", "浪费", "烦", "厌",  
+            "懒得", "没空", "不管", "不教", "撒手", "气死", "炸",  
+            "数到三", "别睡", "写不完", "一遍", "几遍", "耳朵", "懂不懂", "听不懂"  
+        ];  
+  
+        const YELLOW_TIPS = [  
+            "⚠️ 犯规！请把这句话翻译成“宝贝，我们再试一次”。",  
+            "⚠️ 语言攻击扣除人品值！请深呼吸。",  
+            "⚠️ 警告！辱骂会让孩子大脑短路。",  
+            "⚠️ 检测到不耐烦！亲生的，不是充话费送的。",  
+        ];  
+        const RED_TIPS = [  
+            "🔥 音量爆表！您正在施展“狮吼功”，请收功！",  
+            "🔥 红牌！嗓门大不代表道理对。",  
+            "🔥 警告！为了区区一道题，搭上血压不划算！"  
+        ];  
+  
+        // ============================================================  
+        //  3. 程序逻辑（新增安卓兼容优化）  
+        // ============================================================  
+        let audioCtx, analyser, mic, scriptNode, recognition;  
+        let isRunning = false;  
+        let lastAlertTime = 0;  
+        let synth = window.speechSynthesis;  
+        let shoutFrames = 0;   
+          
+        const els = {  
+            btn: document.getElementById('startBtn'),  
+            mascotImg: document.getElementById('mascotImg'),  
+            volBar: document.getElementById('volumeLevel'),  
+            runText: document.getElementById('runningText'),  
+            debug: document.getElementById('debugInfo'),  
+            overlay: document.getElementById('overlay'),  
+            cardImg: document.getElementById('cardImg'),  
+            title: document.getElementById('cardTitle'),  
+            msg: document.getElementById('cardMsg'),  
+            audio: document.getElementById('whistleAudio'),  
+            slider: document.getElementById('sensSlider'),  
+            sliderVal: document.getElementById('sensVal')  
+        };  
+  
+        // 初始化：加载正常图片（安卓预加载优化）  
+        els.mascotImg.src = USER_IMAGES.NORMAL;  
+        // 预加载其他图片，避免警告时闪烁  
+        const preloadImgs = [USER_IMAGES.YELLOW, USER_IMAGES.RED];  
+        preloadImgs.forEach(src => {  
+            const img = new Image();  
+            img.src = src;  
+            img.onerror = () => {  
+                els.debug.innerText = `警告：图片 ${src} 加载失败，请检查路径！`;  
+            };  
+        });  
+  
+        // 音频预加载容错（安卓端音频权限兼容）  
+        els.audio.onerror = () => {  
+            els.debug.innerText = "警告：哨声文件加载失败，请确认 whistle.mp3 在 assets 文件夹下！";  
+        };  
+  
+        els.slider.oninput = function() {  
+            els.sliderVal.innerText = this.value;  
+        };  
+  
+        els.btn.addEventListener('click', init);  
+  
+        async function init() {  
+            if (isRunning) return;  
+              
+            try {  
+                els.btn.innerText = "启动中...";  
+                els.btn.disabled = true;  
+  
+                // 安卓端音频自动播放兼容：先尝试静音播放激活  
+                els.audio.volume = 0;  
+                try {  
+                    await els.audio.play();  
+                    els.audio.pause();  
+                    els.audio.currentTime = 0;  
+                    els.audio.volume = 1.0;  
+                } catch(e) {  
+                    els.debug.innerText = "音频预加载成功（安卓兼容模式）";  
+                }  
+  
+                // 安卓端 AudioContext 兼容  
+                const AudioContext = window.AudioContext || window.webkitAudioContext;  
+                audioCtx = new AudioContext();  
+                if (audioCtx.state === 'suspended') {  
+                    await audioCtx.resume();  
+                }  
+  
+                // 请求麦克风流（安卓端权限提示优化）  
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });  
+                  
+                startVolumeLoop(stream);  
+                startSpeechLoop();  
+  
+                isRunning = true;  
+                els.btn.style.display = 'none';  
+                els.runText.style.display = 'block';  
+                els.debug.innerText = "监听已启动（安卓适配版）";  
+  
+            } catch (err) {  
+                console.error(err);  
+                // 安卓端权限错误提示  
+                alert("⚠️ 请允许麦克风权限！安卓端需在APP设置中开启“录音权限”。");  
+                els.btn.innerText = "重试";  
+                els.btn.disabled = false;  
+            }  
+        }  
+  
+        // --- 音量检测（不变）---  
+        function startVolumeLoop(stream) {  
+            analyser = audioCtx.createAnalyser();  
+            mic = audioCtx.createMediaStreamSource(stream);  
+            scriptNode = audioCtx.createScriptProcessor(2048, 1, 1);  
+              
+            analyser.smoothingTimeConstant = 0.2;  
+            analyser.fftSize = 1024;  
+  
+            mic.connect(analyser);  
+            analyser.connect(scriptNode);  
+            scriptNode.connect(audioCtx.destination);  
+  
+            scriptNode.onaudioprocess = () => {  
+                if (!isRunning) return;  
+  
+                const array = new Uint8Array(analyser.frequencyBinCount);  
+                analyser.getByteFrequencyData(array);  
+                  
+                let values = 0;  
+                for (let i = 0; i < array.length; i++) values += array[i];  
+                const average = values / array.length;  
+                  
+                updateVolUI(average);  
+  
+                const sensitivity = parseInt(els.slider.value);  
+                const threshold = 115 - sensitivity;  
+  
+                if (average > threshold) {  
+                    shoutFrames++;  
+                } else {  
+                    shoutFrames = Math.max(0, shoutFrames - 2);  
+                }  
+  
+                if (shoutFrames > 12) {  
+                    triggerAlert('red', null);  
+                    shoutFrames = 0;   
+                }  
+            };  
+        }  
+  
+        function updateVolUI(val) {  
+            let percent = Math.min(val * 3, 100);  
+            els.volBar.style.width = percent + "%";  
+            if (percent > 80) els.volBar.classList.add('danger');  
+            else els.volBar.classList.remove('danger');  
+        }  
+  
+        // --- 语音识别（安卓端兼容优化）---  
+        function startSpeechLoop() {  
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;  
+            if (!SpeechRecognition) {  
+                els.debug.innerText = "您的设备不支持语音识别（安卓需Chrome内核）";  
+                return;  
+            }  
+  
+            recognition = new SpeechRecognition();  
+            recognition.continuous = true;  
+            recognition.interimResults = true;  
+            recognition.lang = 'zh-CN';  
+            recognition.maxAlternatives = 1; // 安卓端减少备选，提升响应速度  
+  
+            recognition.onresult = (event) => {  
+                let transcript = '';  
+                for (let i = event.resultIndex; i < event.results.length; ++i) {  
+                    transcript += event.results[i][0].transcript;  
+                }  
+                  
+                const checkText = transcript.replace(/\s+/g, "");  
+                  
+                if (checkText) {  
+                    els.debug.innerText = "听到: " + transcript;  
+                    checkKeywords(checkText);  
+                }  
+            };  
+  
+            recognition.onerror = (e) => {  
+                console.log("Speech info:", e.error);  
+                if (e.error === 'not-allowed') {  
+                    alert("麦克风权限被拒绝，请在系统设置中开启！");  
+                }  
+            };  
+              
+            recognition.onend = () => {  
+                if (isRunning) {  
+                    try { recognition.start(); } catch(e) {}  
+                }  
+            };  
+              
+            recognition.start();  
+        }  
+  
+        function checkKeywords(text) {  
+            let matchedWord = "";  
+            let type = null;  
+  
+            // 星号检测  
+            if (text.includes('*') || text.includes('＊')) {  
+                triggerAlert('yellow', "脏话(屏蔽词)");  
+                return;  
+            }  
+  
+            // 1. 检查 FATAL  
+            for (let word of WORDS_FATAL) {  
+                if (text.includes(word)) {  
+                    type = "yellow";  
+                    matchedWord = word;  
+                    break;  
+                }  
+            }  
+  
+            // 2. 检查场景 + 侮辱/不耐烦  
+            if (!type) {  
+                const hasContext = CONTEXT_WORDS.some(ctx => text.includes(ctx));  
+                  
+                if (hasContext) {  
+                    const allCheckWords = [...WORDS_INSULT, ...WORDS_IMPATIENT];  
+                    for (let word of allCheckWords) {  
+                        if (text.includes(word)) {  
+                            const idx = text.indexOf(word);  
+                            if (idx > 0) {  
+                                const prefix = text.charAt(idx - 1);  
+                                if (NEGATIVE_PREFIXES.includes(prefix)) continue;  
+                            }  
+                              
+                            type = "yellow";  
+                            matchedWord = word;  
+                            break;  
+                        }  
+                    }  
+                }  
+            }  
+  
+            if (type) {  
+                triggerAlert(type, matchedWord);  
+            }  
+        }  
+  
+        // --- 触发警告（不变）---  
+        function triggerAlert(mode, word) {  
+            if (Date.now() - lastAlertTime < 3000) return;  
+            lastAlertTime = Date.now();  
+  
+            els.overlay.className = `overlay mode-${mode} active`;  
+  
+            if (mode === 'yellow') {  
+                els.cardImg.src = USER_IMAGES.YELLOW;  
+                els.title.innerText = "🐱 黄牌警告！";  
+                const tip = YELLOW_TIPS[Math.floor(Math.random() * YELLOW_TIPS.length)];  
+                els.msg.innerHTML = `检测到：<span style="color:#E91E63;font-size:24px;">“${word}”</span><br>${tip}`;  
+                playWhistle();  
+                speak(tip);  
+            } else {  
+                els.cardImg.src = USER_IMAGES.RED;  
+                els.title.innerText = "🦁 红牌警告！";  
+                const tip = RED_TIPS[Math.floor(Math.random() * RED_TIPS.length)];  
+                els.msg.innerHTML = `情绪音量过高！<br>${tip}`;  
+                playWhistle();  
+                speak(tip);  
+            }  
+        }  
+  
+        function playWhistle() {  
+            try {  
+                els.audio.currentTime = 0;  
+                els.audio.play();  
+            } catch(e) {}  
+        }  
+  
+        function speak(text) {  
+            if (synth.speaking) synth.cancel();  
+            const u = new SpeechSynthesisUtterance(text);  
+            u.lang = 'zh-CN';  
+            u.rate = 1.1;  
+            synth.speak(u);  
+        }  
+  
+        function dismissAlert() {  
+            els.overlay.classList.remove('active');  
+            synth.cancel();  
+            shoutFrames = 0;  
+            els.debug.innerText = "监听恢复...";  
+            els.mascotImg.src = USER_IMAGES.NORMAL;  
+        }  
+    </script>  
+</body>  
+</html>  
