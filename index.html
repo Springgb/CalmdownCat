@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>淡定家长 - 情绪裁判</title>  
     <style>  
-        /* --- 样式保持不变，维持你喜欢的风格 --- */  
         :root {  
             --bg-color: #FFF0F5;  
             --card-bg: #ffffff;  
@@ -71,9 +70,7 @@
             margin-right: 5px;  
         }  
         .live-indicator.on {  
-            background: #4CAF50;  
-            box-shadow: 0 0 8px #4CAF50;  
-            animation: blink 1s infinite;  
+            background: #4CAF50; box-shadow: 0 0 8px #4CAF50; animation: blink 1s infinite;  
         }  
         @keyframes blink { 0%{opacity:0.5} 50%{opacity:1} 100%{opacity:0.5} }  
   
@@ -102,7 +99,7 @@
   
         .card-img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 10px; }  
         .card-title { font-size: 24px; font-weight: 900; margin: 10px 0; display: block; }  
-        .card-msg { font-size: 16px; color: #455a64; font-weight: bold; line-height: 1.5; margin-bottom: 20px; }  
+        .card-msg { font-size: 16px; color: #455a64; font-weight: bold; line-height: 1.5; margin-bottom: 20px; white-space: pre-wrap;}  
           
         .mode-red .card-title { color: #d32f2f; }  
         .mode-yellow .card-title { color: #FBC02D; }  
@@ -154,27 +151,74 @@
     </div>  
   
     <script>  
-        // === 资源配置 ===  
+        // === 1. 资源配置 ===  
         const IMAGES = {  
             NORMAL: "assets/cat_normal.png",   
             YELLOW: "assets/card_yellow.png",   
             RED:   "assets/card_red.png"  
         };  
   
-        // === 词库 (不耐烦+脏话) ===  
-        const WORDS = {  
-            FATAL: ["猪","笨猪","蠢驴","废物","蠢货","滚","去死","没脑子","妈的","卧槽","神经病","闭嘴","shit","fuck"],  
-            INSULT: ["笨","蠢","呆","白痴","智障","没用","没出息","无能","没救","白搭","丢人"],  
-            IMPATIENT: ["快点","磨蹭","烦","厌","懒得","不管","气死","几遍","耳朵","听不懂","懂不懂"]  
+        // === 2. 核心词库 (中文 + 英文全量) ===  
+        // 注意：所有英文已转换为小写，方便比对  
+        const BAD_WORDS = [  
+            // --- 中文高频词 ---  
+            "猪","笨猪","蠢驴","废物","蠢货","滚","去死","没脑子","妈的","卧槽","神经病","闭嘴","傻子","低能","垃圾",  
+            "笨","蠢","呆","傻","白痴","智障","没用","没出息","无能","没救","白搭","丢人","扫大街","搬砖","捡垃圾","要饭",  
+            "快点","磨蹭","烦","厌","懒得","不管","气死","几遍","耳朵","听不懂","懂不懂","再试","别睡",  
+              
+            // --- 英文高频词 (Base) ---  
+            "damn", "dammit", "hell", "holy hell", "shit", "bullshit", "crap", "bullcrap",  
+            "fuck", "fucking", "fuck off", "ass", "asshole", "dumbass", "jackass",  
+            "bitch", "bastard", "piss", "piss off", "screw", "screw up", "screw you",  
+              
+            // --- 英文智力贬低 (Insult) ---  
+            "stupid", "idiot", "moron", "retard", "retarded", "dimwit", "blockhead", "knucklehead",  
+            "brainless", "no brain", "empty-headed", "thickheaded",   
+            "incompetent", "useless", "worthless", "hopeless", "slacker", "ignorant", "uneducated", "fool", "foolish",  
+  
+            // --- 英文句子片段 (Phrase Fragments) ---  
+            "what the hell", "for fuck's sake", "son of a bitch", "you're stupid", "stupid kid",   
+            "stupid idiot", "total idiot", "you're an idiot", "complete moron", "you're retarded",   
+            "you're brainless", "you're so thick", "you're slow", "slow learner", "you're incompetent",  
+            "you're useless", "you're worthless", "good for nothing", "can't do anything right",  
+            "never get it right", "how stupid can you be", "are you brain dead", "do you have a brain",  
+            "use your brain", "waste of time", "waste of space", "for crying out loud", "good grief",  
+            "give me a break", "you're impossible", "can't you do anything", "hopeless case", "lost cause",  
+            "you're a mess", "what a mess", "you're careless", "so careless", "reckless", "you're lazy",  
+            "lazy bum", "you're a slacker", "you're ignorant", "you're a fool", "shut up", "shut the hell up",  
+            "shut your mouth", "leave me alone", "get out of my sight", "stop bothering me",   
+            "quit wasting my time", "what's wrong with you", "what's your problem", "are you crazy",  
+            "are you insane", "you're nuts", "driving me crazy", "driving me nuts", "this is ridiculous",  
+            "you're ridiculous", "you're pathetic", "so pathetic", "you're disgusting", "you're so annoying",  
+            "such a nuisance", "get a clue", "wake up", "snap out of it", "don't be stupid",  
+            "don't be an idiot", "make me sick", "you're a nightmare", "why can't you be normal", "why are you so difficult"  
+        ];  
+  
+        // === 3. 幽默劝慰语录库 ===  
+        const FUNNY_TIPS = {  
+            YELLOW: [   
+                "亲生的，亲生的，忍住！\n莫生气，气出病来无人替。",  
+                "默念三遍：\n我爱孩子，孩子爱我，作业是浮云。",  
+                "深呼吸...\n想想孩子刚出生时那可爱的样子。",  
+                "辅导作业是渡劫，\n心态要稳，哪怕心里MMP，脸上笑嘻嘻。",  
+                "请注意措辞！\n您现在的样子，就是孩子未来的样子。",  
+                "淡定！\n爱因斯坦小时候也挺笨的（大概吧）。"  
+            ],  
+            RED: [  
+                "楼下邻居要报警了！\n嗓门大不代表道理对。",  
+                "您的狮吼功又精进了，\n但孩子的耳膜受不了啊！",  
+                "降温！降温！\n血压计要爆表了！",  
+                "温柔才是最强大的力量，\n小声点说，孩子反而听得进。",  
+                "吓死宝宝了！\n咱是文明家长，不搞河东狮吼。",  
+                "输出全靠吼？\n嗓子不要了吗？喝口水冷静下。"  
+            ]  
         };  
-        const CONTEXT = ["作业","题","学","考","写","算","读","错","教","试卷"];  
   
         let audioCtx, analyser, mic, scriptNode, recognition;  
         let isRunning = false;  
         let lastAlertTime = 0;  
         let synth = window.speechSynthesis;  
         let shoutFrames = 0;   
-        let restartTimer = null; // 用于防止识别引擎死掉  
   
         const els = {  
             btn: document.getElementById('startBtn'),  
@@ -195,59 +239,57 @@
         els.mascot.src = IMAGES.NORMAL;  
         els.slider.oninput = function() { els.val.innerText = this.value; };  
   
-        // === 核心启动逻辑 ===  
+        // === 启动逻辑 ===  
         els.btn.addEventListener('click', async () => {  
             if (isRunning) return;  
-            els.btn.innerText = "正在启动...";  
+            els.btn.innerText = "启动中...";  
             els.btn.disabled = true;  
   
             try {  
-                // 1. 预热音频 (激活iOS/Android音频环境)  
+                // 预热音频  
                 els.audio.volume = 0;  
                 await els.audio.play();  
                 els.audio.pause();  
                 els.audio.currentTime = 0;  
                 els.audio.volume = 1.0;  
   
-                // 2. 启动 AudioContext  
                 const AudioContext = window.AudioContext || window.webkitAudioContext;  
                 audioCtx = new AudioContext();  
                 if (audioCtx.state === 'suspended') await audioCtx.resume();  
   
-                // 3. 启动麦克风流  
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });  
                   
                 startVolumeLoop(stream);  
-                initSpeechEngine(); // 初始化语音引擎  
+                initSpeechEngine();  
   
                 isRunning = true;  
                 els.btn.style.display = 'none';  
                 els.dot.classList.add('on');  
-                els.status.innerText = "监听中...";  
-                els.debug.innerText = "系统正常，请保持网络连接";  
+                els.status.innerText = "正在监听...";  
+                els.debug.innerText = "✅ 系统已就绪，请保持网络";  
   
             } catch (err) {  
                 console.error(err);  
-                alert("启动失败：请检查麦克风权限或网络。\n注意：语音识别需要联网！");  
+                alert("启动失败：请检查麦克风权限。\n(iOS请用Safari，安卓请尝试Chrome/Edge)");  
                 els.btn.innerText = "重试";  
                 els.btn.disabled = false;  
+                els.debug.innerText = "Error: " + err.message;  
             }  
         });  
   
-        // === 1. 音量监控 (红牌) ===  
+        // === 1. 音量监控 ===  
         function startVolumeLoop(stream) {  
             analyser = audioCtx.createAnalyser();  
             mic = audioCtx.createMediaStreamSource(stream);  
             scriptNode = audioCtx.createScriptProcessor(2048, 1, 1);  
             analyser.smoothingTimeConstant = 0.3;  
             analyser.fftSize = 1024;  
-  
             mic.connect(analyser);  
             analyser.connect(scriptNode);  
             scriptNode.connect(audioCtx.destination);  
   
             scriptNode.onaudioprocess = () => {  
-                if (!isRunning) return; // 如果暂停了就不处理  
+                if (!isRunning) return;  
   
                 const array = new Uint8Array(analyser.frequencyBinCount);  
                 analyser.getByteFrequencyData(array);  
@@ -255,13 +297,11 @@
                 for (let i=0; i<array.length; i++) values+=array[i];  
                 const avg = values / array.length;  
                   
-                // UI 更新  
                 let percent = Math.min(avg * 3, 100);  
                 els.volBar.style.width = percent + "%";  
                 if (percent > 80) els.volBar.classList.add('danger');  
                 else els.volBar.classList.remove('danger');  
   
-                // 判定逻辑  
                 const threshold = 115 - parseInt(els.slider.value);  
                 if (avg > threshold) shoutFrames++;  
                 else shoutFrames = Math.max(0, shoutFrames - 2);  
@@ -273,43 +313,40 @@
             };  
         }  
   
-        // === 2. 语音识别 (黄牌) - 强力重启版 ===  
+        // === 2. 语音识别 (防卡死版) ===  
         function initSpeechEngine() {  
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;  
             if (!SpeechRecognition) {  
-                els.debug.innerText = "⚠️ 您的浏览器不支持语音转文字，只能检测音量。";  
+                els.debug.innerText = "⚠️ 当前浏览器不支持听写 (仅限音量)";  
                 return;  
             }  
   
             recognition = new SpeechRecognition();  
-            recognition.continuous = false; // 安卓端建议设为false，配合onend重启，更稳定  
+            recognition.continuous = false;   
             recognition.interimResults = true;  
-            recognition.lang = 'zh-CN';  
+            recognition.lang = 'zh-CN'; // 设为中文通常也能识别英文，如果需要纯英文可改 en-US，但 zh-CN 混杂模式最好  
               
-            recognition.onstart = () => {   
-                els.dot.classList.add('on');   
-                els.status.innerText = "正在听...";  
-            };  
+            recognition.onstart = () => { els.dot.classList.add('on'); els.status.innerText = "正在听..."; };  
               
             recognition.onend = () => {   
                 els.dot.classList.remove('on');  
-                // 只要程序还在运行，就立刻重启识别  
                 if(isRunning) {  
-                    // 稍微延迟一下避免死循环卡死  
-                    setTimeout(() => {  
-                        try { recognition.start(); } catch(e){}  
-                    }, 200);  
+                    setTimeout(() => { try { recognition.start(); } catch(e){} }, 200);  
+                }  
+            };  
+  
+            recognition.onerror = (event) => {  
+                if (event.error !== 'no-speech') {  
+                    console.log("Speech Error:", event.error);  
+                    if(event.error === 'network') els.debug.innerText = "❌ 网络连接失败 (可能需梯子)";  
                 }  
             };  
   
             recognition.onresult = (e) => {  
                 let text = '';  
-                for (let i = e.resultIndex; i < e.results.length; ++i) {  
-                    text += e.results[i][0].transcript;  
-                }  
+                for (let i = e.resultIndex; i < e.results.length; ++i) text += e.results[i][0].transcript;  
                 if(text) {  
-                    // 显示听到的最后几个字，方便调试  
-                    els.debug.innerText = "👂: " + text.slice(-10);  
+                    els.debug.innerText = "👂: " + text.slice(-20); // 显示更多字符以便调试  
                     checkWords(text);  
                 }  
             };  
@@ -318,71 +355,77 @@
         }  
   
         function checkWords(text) {  
-            // 星号屏蔽词处理（有些手机会自动把脏话变成***）  
-            if(text.includes('*') || text.includes('＊')) return trigger('yellow', "脏话(已屏蔽)");  
+            // 1. 统一转为小写，以匹配英文大小写差异 (FUCK -> fuck)  
+            const lowerText = text.toLowerCase();  
+  
+            if(lowerText.includes('*') || lowerText.includes('＊')) return trigger('yellow', "脏话(已屏蔽)");  
               
-            // 1. 致命词检测  
-            for(let w of WORDS.FATAL) if(text.includes(w)) return trigger('yellow', w);  
-              
-            // 2. 场景词+组合词检测  
-            if(CONTEXT.some(c => text.includes(c))) {  
-                for(let w of [...WORDS.INSULT, ...WORDS.IMPATIENT]) {  
-                    if(text.includes(w)) return trigger('yellow', w);  
+            for(let w of BAD_WORDS) {  
+                // 2. 这里的 w 已经在数组里是小写的了，直接比对  
+                if(lowerText.includes(w)) {  
+                    trigger('yellow', w);  
+                    return;  
                 }  
             }  
         }  
   
-        // === 触发警告（关键修改：暂停监听） ===  
+        // === 3. 触发警告 (修复播报读不全的问题) ===  
         function trigger(mode, word) {  
-            // 冷却时间  
             if (Date.now() - lastAlertTime < 3000) return;  
             lastAlertTime = Date.now();  
   
-            // 1. 暂停监听状态，防止自己听到自己报警，导致死循环  
+            // 暂停监听  
             isRunning = false;   
-            if(recognition) recognition.stop();  
+            if(recognition) try{ recognition.stop(); } catch(e){}  
             els.dot.classList.remove('on');  
-            els.status.innerText = "警告中(暂停监听)";  
+            els.status.innerText = "⛔ 警告触发中...";  
   
-            // 2. 显示弹窗  
             els.overlay.className = `overlay mode-${mode} active`;  
             els.cardImg.src = (mode === 'yellow') ? IMAGES.YELLOW : IMAGES.RED;  
             els.title.innerText = (mode === 'yellow') ? "黄牌警告！" : "红牌警告！";  
               
-            let tip = "";  
+            // === 随机抽取幽默语录 ===  
+            let tipsArray = (mode === 'yellow') ? FUNNY_TIPS.YELLOW : FUNNY_TIPS.RED;  
+            let randomTip = tipsArray[Math.floor(Math.random() * tipsArray.length)];  
+  
+            let mainMsg = "";  
             if(mode === 'yellow') {  
-                tip = `检测到：${word}。请注意语言文明！`;  
+                mainMsg = `检测到敏感词：【${word}】`;  
             } else {  
-                tip = "嗓门太大了！请降温！";  
+                mainMsg = "嗓门太大了！";  
             }  
-            els.msg.innerText = tip;  
+  
+            // 组合显示内容 (屏幕显示保留换行)  
+            els.msg.innerText = mainMsg + "\n\n💡 " + randomTip;  
               
-            // 3. 播放声音  
+            // 播放音效  
             try{ els.audio.currentTime=0; els.audio.play(); }catch(e){}  
               
-            // 4. 播报语音  
+            // === 语音播报逻辑修正 ===  
             if(synth.speaking) synth.cancel();  
-            let u = new SpeechSynthesisUtterance(tip);  
+              
+            let speakText = (mode === 'yellow') ? "请注意语言文明。" : "请注意音量。";  
+              
+            // 关键修改：把换行符 \n 替换成逗号，这样语音引擎就会连贯读下去，而不是停在第一句  
+            speakText += randomTip.replace(/\n/g, "，");   
+  
+            let u = new SpeechSynthesisUtterance(speakText);  
             u.lang = 'zh-CN';  
             synth.speak(u);  
         }  
   
-        // === 恢复监听（关键修改：彻底重启） ===  
         function dismissAlert() {  
             els.overlay.classList.remove('active');  
-            synth.cancel(); // 停止播报  
+            synth.cancel();   
               
-            // 恢复状态  
+            els.debug.innerText = "重启监听中...";  
             shoutFrames = 0;  
             isRunning = true;  
-            els.debug.innerText = "正在恢复连接...";  
               
-            // 确保 AudioContext 是激活的  
             if (audioCtx.state === 'suspended') audioCtx.resume();  
   
-            // 重启语音识别  
             if (recognition) {  
-                try { recognition.start(); } catch(e) {}  
+                try { recognition.abort(); setTimeout(() => { try { recognition.start(); } catch(e){} }, 100); } catch(e) {}  
             }  
         }  
     </script>  
